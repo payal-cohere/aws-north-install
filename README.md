@@ -1,6 +1,4 @@
-# North Deployment on AWS
-
-## North Install using Cohere SaaS for Models
+# North Deployment on AWS | Cohere SaaS for Models
 
 ## Install EKS Cluster
 First, launch an EKS cluster by following the steps in the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html). 
