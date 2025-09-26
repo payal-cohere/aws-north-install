@@ -1,4 +1,3 @@
-```markdown
 # North Deployment on AWS
 
 ## North Install using Cohere SaaS for Models
@@ -53,15 +52,55 @@ Install the following packages from your choice of machine (Cloud VM/local/Windo
      kubectl patch storageclass <storage-class-name> -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
      ```
    - Run `kubectl get sc` again to ensure your storage class has a `(default)` next to it.
-   - **Expected Output:**
+   - **Expected Output**
      ```
      gp2 (default)  kubernetes.io/aws-ebs Delete WaitForFirstConsumer false
      ```
+     
 
 ### Setup Linux Kernel Parameter
 
 1. **Create File `set-vm-max-map-count.yaml`**
-   - Provide the necessary code in the file.
+   ```
+   apiVersion: apps/v1
+   kind: DaemonSet
+   metadata:
+     name: set-sysctl
+     namespace: kube-system
+     labels:
+       app: set-sysctl
+   spec:
+     selector:
+       matchLabels:
+         app: set-sysctl
+     template:
+       metadata:
+         labels:
+           app: set-sysctl
+       spec:
+         hostPID: true
+         containers:
+           - name: sysctl
+             image: busybox:1.35
+             securityContext:
+               privileged: true
+             command:
+               - sh
+               - -c
+               - |
+                 echo "Setting vm.max_map_count=262144 on host..."
+                 nsenter --target 1 --mount --uts --ipc --net --pid sysctl -w vm.max_map_count=262144
+                 echo "Verifying:"
+                 nsenter --target 1 --mount --uts --ipc --net --pid cat /proc/sys/vm/max_map_count
+                 sleep 3600
+             volumeMounts:
+               - name: host-root
+                 mountPath: /host
+         volumes:
+           - name: host-root
+             hostPath:
+               path: /
+    ```
 
 2. **Apply the Configuration**
    - Run command:
@@ -74,7 +113,7 @@ Install the following packages from your choice of machine (Cloud VM/local/Windo
      ```bash
      kubectl exec -n kube-system -it $(kubectl get pod -n kube-system -l app=set-sysctl -o jsonpath='{.items[0].metadata.name}') -- sysctl vm.max_map_count
      ```
-   - **Expected Output:**
+   - **Expected Output**
      ```
      vm.max_map_count = 262144
      ```
@@ -142,14 +181,13 @@ Install the following packages from your choice of machine (Cloud VM/local/Windo
 4. **Confirm Pods are Healthy**
    - Use command `kubectl get pods` or check the pod status through the AWS management portal.
 
-#### Port Forward with Envoy
+5. **Port Forward with Envoy**
 
-1. **Login to the Platform**
+6. **Login to the Platform**
    - Access: http://localhost:8080/admin
-   - Username: asmin@cohere.com
+   - Username: admin@cohere.com
    - Password: Run command:
      ```bash
      kubectl get secret bootstrap-admin-password -n cohere -o jsonpath="{.data.bootstrapAdminPassword}" | base64 -d | pbcopy
      ```
    - The password will be copied to your clipboard; there will be no output.
-```
