@@ -2,7 +2,7 @@
 
 ## North Install using Cohere SaaS for Models
 
-### Install EKS Cluster
+## Install EKS Cluster
 First, launch an EKS cluster by following the steps in the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html). 
 The steps in summary:
 
@@ -24,7 +24,7 @@ The steps in summary:
    - 500GB EBS storage.
    - Minimum 2, Maximum 5.
 
-### Setup Pre-requisites
+## Setup Pre-requisites
 
 Install the following packages from your choice of machine (Cloud VM/local/Windows etc.)
 If you are running it via AWS EC2 instance, there will be additional steps to ensure there is connectivity between the EC2 host and the EKS cluster.
@@ -155,7 +155,7 @@ If this driver is not installed, the postgresql pod does not initialize with the
 
 - Create the file as is using the link: https://private.docs.cohere.com/docs/install-overview
 
-### Installation
+## Installation
 After Pre-requisites are installed, below is the installation process
 Follow steps in https://private.docs.cohere.com/docs/installation-steps. To summarize
 
