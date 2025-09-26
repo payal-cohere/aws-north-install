@@ -27,6 +27,8 @@ The steps in summary:
 ### Setup Pre-requisites
 
 Install the following packages from your choice of machine (Cloud VM/local/Windows etc.)
+If you are running it via AWS EC2 instance, there will be additional steps to ensure there is connectivity between the EC2 host and the EKS cluster.
+The steps below are running on a local MAC laptop. Package install commands and other actions will differ based on machine type (MAC/Linux/Windows etc.)
 
 - **Set AWS Credentials**
   - Run command `aws configure`. Enter the access key, secret key, and session token.
@@ -146,11 +148,16 @@ Install the following packages from your choice of machine (Cloud VM/local/Windo
      kubectl get pods -n kube-system | grep ebs
      ```
 
-### Create `platform.values.yaml` File
+If this driver is not installed, the postgresql pod does not initialize with the following  error:
+```running PreBind plugin "VolumeBinding": binding volumes: context deadline exceeded```
+
+### Create platform value File
 
 - Create the file as is using the link: https://private.docs.cohere.com/docs/install-overview
 
 ### Installation
+After Pre-requisites are installed, below is the installation process
+Follow steps in https://private.docs.cohere.com/docs/installation-steps. To summarize
 
 #### Authenticate Helm
 
