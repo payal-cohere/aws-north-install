@@ -1,1 +1,155 @@
-# aws-north-install
+```markdown
+# North Deployment on AWS
+
+## North Install using Cohere SaaS for Models
+
+### Install EKS Cluster
+
+1. **Create the EKS Cluster**
+   - Follow the steps in the AWS documentation to launch an EKS cluster.
+   - Choose custom configuration.
+   - Disable EKS Auto Mode.
+   - Provide a Cluster Name.
+   - Create a new recommended IAM role.
+   - Provide a VPC and Subnets with Public access.
+   - Choose ‘Public and Private’ for cluster endpoint access.
+   - Keep the cluster name handy after creation.
+
+2. **Add a Node Group**
+   - After the cluster is created, go to the compute tab and add a node group.
+   - Provide a name.
+   - AMI type: standard.
+   - Instance type: m6i.4xl.
+   - 500GB EBS storage.
+   - Minimum 2, Maximum 5.
+
+### Setup Pre-requisites
+
+Install the following packages from your choice of machine (Cloud VM/local/Windows etc.):
+
+- **Set AWS Credentials**
+  - Run command `aws configure`. Enter the access key, secret key, and session token.
+
+- **Install AWS CLI**
+  - Follow the instructions at: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+- **Install Helm**
+  - Follow the instructions at: https://helm.sh/docs/intro/install/
+
+- **Install KUBECTL/EKSCTL**
+  - Follow the instructions at: https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
+  - Update your Kubeconfig context to the EKS cluster created above.
+  - Substitute the region and EKS cluster name before executing the below command:
+    ```bash
+    aws eks update-kubeconfig --region "$REGION" --name "$CLUSTER_NAME"
+    ```
+
+### Setup Default Storage
+
+1. **Check Default Storage Class**
+   - Run command `kubectl get sc`.
+   - If you do not see a default storage class, run the below command and substitute the storage-class-name from the output:
+     ```bash
+     kubectl patch storageclass <storage-class-name> -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+     ```
+   - Run `kubectl get sc` again to ensure your storage class has a `(default)` next to it.
+   - **Expected Output:**
+     ```
+     gp2 (default)  kubernetes.io/aws-ebs Delete WaitForFirstConsumer false
+     ```
+
+### Setup Linux Kernel Parameter
+
+1. **Create File `set-vm-max-map-count.yaml`**
+   - Provide the necessary code in the file.
+
+2. **Apply the Configuration**
+   - Run command:
+     ```bash
+     kubectl apply -f set-vm-max-map-count.yaml
+     ```
+
+3. **Test the Configuration**
+   - Run command:
+     ```bash
+     kubectl exec -n kube-system -it $(kubectl get pod -n kube-system -l app=set-sysctl -o jsonpath='{.items[0].metadata.name}') -- sysctl vm.max_map_count
+     ```
+   - **Expected Output:**
+     ```
+     vm.max_map_count = 262144
+     ```
+
+### Install EBS CSI Driver
+
+1. **Associate IAM OIDC Provider**
+   - Substitute the region and EKS cluster name before executing the below commands:
+     ```bash
+     eksctl utils associate-iam-oidc-provider --region <<region>> --cluster <<eks-cluster-name>> --approve
+     ```
+
+2. **Create IAM Service Account**
+   - Run command:
+     ```bash
+     eksctl create iamserviceaccount --region <<region>> --name ebs-csi-controller-sa --namespace kube-system --cluster <<eks-cluster-name>> --attach-policy-arn arn:aws:iam::aws:policy/AmazonEBSCSIDriverPolicy --approve
+     ```
+
+3. **Create EBS CSI Driver Addon**
+   - Run command:
+     ```bash
+     eksctl create addon --name aws-ebs-csi-driver --cluster <<eks-cluster-name>> --region <<region>> --force
+     ```
+
+4. **Test the Installation**
+   - Run command:
+     ```bash
+     kubectl get pods -n kube-system | grep ebs
+     ```
+
+### Create `platform.values.yaml` File
+
+- Create the file as is using the link: https://private.docs.cohere.com/docs/install-overview
+
+### Installation
+
+#### Authenticate Helm
+
+- You will need the password from a Cohere representative.
+
+#### Create Deployment Namespace
+
+- ‘Cohere’ is the namespace created as per the documentation.
+
+#### Create Secret Key
+
+- Modify the Cohere API key with your production key.
+
+#### Setup PostgreSQL Credentials
+
+- Prepare PostgreSQL Helm.
+- Install PostgreSQL.
+
+#### Set up North Helm
+
+1. **Change Default Storage Class**
+   - Change the default storage class to the value provided by command `kubectl get sc`.
+
+2. **Modify `setVMMaxMapCount`**
+   - Change the value from `false` to `true`: `setVMMaxMapCount: true`.
+
+3. **Install North Helm**
+   - Install North Helm.
+
+4. **Confirm Pods are Healthy**
+   - Use command `kubectl get pods` or check the pod status through the AWS management portal.
+
+#### Port Forward with Envoy
+
+1. **Login to the Platform**
+   - Access: http://localhost:8080/admin
+   - Username: asmin@cohere.com
+   - Password: Run command:
+     ```bash
+     kubectl get secret bootstrap-admin-password -n cohere -o jsonpath="{.data.bootstrapAdminPassword}" | base64 -d | pbcopy
+     ```
+   - The password will be copied to your clipboard; there will be no output.
+```
