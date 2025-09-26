@@ -3,6 +3,8 @@
 ## North Install using Cohere SaaS for Models
 
 ### Install EKS Cluster
+First, launch an EKS cluster by following the steps in the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html). 
+The steps in summary:
 
 1. **Create the EKS Cluster**
    - Follow the steps in the AWS documentation to launch an EKS cluster.
@@ -24,7 +26,7 @@
 
 ### Setup Pre-requisites
 
-Install the following packages from your choice of machine (Cloud VM/local/Windows etc.):
+Install the following packages from your choice of machine (Cloud VM/local/Windows etc.)
 
 - **Set AWS Credentials**
   - Run command `aws configure`. Enter the access key, secret key, and session token.
