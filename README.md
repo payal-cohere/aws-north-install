@@ -4,6 +4,8 @@
 First, launch an EKS cluster by following the steps in the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html). 
 The steps in summary:
 
+---
+
 1. **Create the EKS Cluster**
    - Follow the steps in the AWS documentation to launch an EKS cluster.
    - Choose custom configuration.
@@ -27,6 +29,8 @@ The steps in summary:
 Install the following packages from your choice of machine (Cloud VM/local/Windows etc.)
 If you are running it via AWS EC2 instance, there will be additional steps to ensure there is connectivity between the EC2 host and the EKS cluster.
 The steps below are running on a local MAC laptop. Package install commands and other actions will differ based on machine type (MAC/Linux/Windows etc.)
+
+---
 
 - **Set AWS Credentials**
   - Run command `aws configure`. Enter the access key, secret key, and session token.
@@ -158,6 +162,8 @@ After Pre-requisites are installed, below is the installation process.
 Follow steps in https://private.docs.cohere.com/docs/installation-steps. 
 To summarize: 
 
+---
+
 #### Authenticate Helm
 
 - You will need the password from a Cohere representative.
@@ -220,15 +226,11 @@ service:
 
 > **Note:** A Network Load Balancer (NLB) will automatically be created with these settings.
 
----
-
 ### 2. Upgrade Helm release
 
 Run the Helm upgrade to apply changes and configure the public URL/IP of the load balancer:
 
 helm upgrade --install north oci://helm.cohere.com/north/stable/cohere-eno --version "<<version>>" -f platform.values.yaml -f myenv.platform.values.yaml -n cohere
-
----
 
 ### 3. Retrieve External IP / URL
 
@@ -240,8 +242,6 @@ Look for the `External-IP` of the `cohere-envoy-gateway-xxxxxxx` service.
 It will mostly be a DNS name, for example:
 
 a408f5dd68e094f3eaeec70db6d85e1d-ad87f2616d68f41b.elb.us-east-1.amazonaws.com
-
----
 
 ### 4. Update Helm values with External IP / URL
 
@@ -261,8 +261,6 @@ toolkit:
 ingress:
   customerDomain: "<<EXTERNAL-IP-value>>" #change from localhost to external-ip-value
 
----
-
 ### 5. Re-apply Helm chart
 
 After updating the file, run:
@@ -270,8 +268,6 @@ After updating the file, run:
 helm upgrade --install north oci://helm.cohere.com/north/stable/cohere-eno --version "<<version>>" -f platform.values.yaml -f myenv.platform.values.yaml -n cohere
 
 This ensures that Envoy Gateway routes and the public URLs are properly configured for external access via the NLB.
-
----
 
 ### 6. Test External Access
 
