@@ -206,7 +206,7 @@ To summarize:
      ```
    - The password will be copied to your clipboard; there will be no output.
   
-## Envoy Gateway Networking and Helm Configuration
+## Networking: Enable external/public access
 
 This section explains how to configure external access to the Envoy Gateway using a Network Load Balancer (NLB) in AWS and update the Helm values file for your deployment.
 
