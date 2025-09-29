@@ -153,7 +153,7 @@ If this driver is not installed, the postgresql pod does not initialize with the
 
 - Create the file as is using the link: https://private.docs.cohere.com/docs/install-overview
 
-## Installation
+## PostgreSQL and North Installation
 After Pre-requisites are installed, below is the installation process.
 Follow steps in https://private.docs.cohere.com/docs/installation-steps. 
 To summarize: 
