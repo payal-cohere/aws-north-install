@@ -199,3 +199,86 @@ To summarize:
      kubectl get secret bootstrap-admin-password -n cohere -o jsonpath="{.data.bootstrapAdminPassword}" | base64 -d | pbcopy
      ```
    - The password will be copied to your clipboard; there will be no output.
+  
+## Envoy Gateway Networking and Helm Configuration
+
+This section explains how to configure external access to the Envoy Gateway using a Network Load Balancer (NLB) in AWS and update the Helm values file for your deployment.
+
+---
+
+### 1. Edit Helm values file
+
+Open `myenv.platform.values.yaml` and update the service section as follows:
+
+service:
+  type: LoadBalancer
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "false"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+
+> **Note:** A Network Load Balancer (NLB) will automatically be created with these settings.
+
+---
+
+### 2. Upgrade Helm release
+
+Run the Helm upgrade to apply changes and configure the public URL/IP of the load balancer:
+
+helm upgrade --install north oci://helm.cohere.com/north/stable/cohere-eno --version "<<version>>" -f platform.values.yaml -f myenv.platform.values.yaml -n cohere
+
+---
+
+### 3. Retrieve External IP / URL
+
+Get the external hostname assigned to the Envoy Gateway service:
+
+kubectl get svc -n cohere
+
+Look for the `External-IP` of the `cohere-envoy-gateway-xxxxxxx` service.  
+It will mostly be a DNS name, for example:
+
+a408f5dd68e094f3eaeec70db6d85e1d-ad87f2616d68f41b.elb.us-east-1.amazonaws.com
+
+---
+
+### 4. Update Helm values with External IP / URL
+
+Replace the following placeholders in `myenv.platform.values.yaml` with the External-IP / hostname obtained above:
+
+global:
+  config:
+    dex:
+      issuer: "http://<<EXTERNAL-IP-value>>/dex"
+
+toolkit:
+  config:
+    publicBackendURL: "http://<<EXTERNAL-IP-value>>/api"
+    publicFrontendURL: "http://<<EXTERNAL-IP-value>>"
+    publicAdminURL: "http://<<EXTERNAL-IP-value>>/admin"
+
+ingress:
+  customerDomain: "<<EXTERNAL-IP-value>>" #change from localhost to external-ip-value
+
+---
+
+### 5. Re-apply Helm chart
+
+After updating the file, run:
+
+helm upgrade --install north oci://helm.cohere.com/north/stable/cohere-eno --version "<<version>>" -f platform.values.yaml -f myenv.platform.values.yaml -n cohere
+
+This ensures that Envoy Gateway routes and the public URLs are properly configured for external access via the NLB.
+
+---
+
+### 6. Test External Access
+
+Once the deployment is complete, you should be able to reach the application via the ELB hostname:
+
+- http://<<EXTERNAL-IP-value>>/admin  
+- http://<<EXTERNAL-IP-value>>/api  
+- http://<<EXTERNAL-IP-value>>/dex
+
+
