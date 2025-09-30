@@ -1,4 +1,4 @@
-# North Deployment on AWS | Cohere SaaS for Models
+# North Deployment on AWS
 
 ## Install EKS Cluster
 First, launch an EKS cluster by following the steps in the [AWS documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html). 
@@ -278,4 +278,94 @@ Once the deployment is complete, you should be able to reach the application via
 http://<<EXTERNAL-IP-value>>/admin  
 http://<<EXTERNAL-IP-value>>/login  
 ```
+---
+---
 
+## Install separate Postgres databse and Kubernetes Integration
+
+### Install Postgres via AWS Management Console
+- Install Postgres using AWS Management Console. <<provide link and specifics>>
+- Update the security group to allow traffic from the EKS cluster (recommended for connectivity).
+
+## Create Databases Using a Temporary Pod Inside Kubernetes
+- Run a temporary Postgres client pod inside your cluster:
+
+```
+kubectl run -i --tty pg-client --image=postgres --rm --env="PGPASSWORD=YourMasterPassword" -- bash
+```
+
+- Connect to the RDS instance:
+
+```
+psql -h <<rds-endpoint-name>> \
+   -U postgres \
+   -d postgres
+```
+
+- Create the required databases:
+
+```
+CREATE DATABASE north;
+CREATE DATABASE compass;
+CREATE DATABASE dex;
+CREATE DATABASE openfga;
+CREATE DATABASE north_admin;
+CREATE DATABASE north_tables;
+CREATE DATABASE atlas;
+CREATE DATABASE inngest;
+```
+- Exit from the temporary pod
+  
+### Store Credentials as Kubernetes Secrets
+- Create a Kubernetes secret for Postgres password. Here the master username and password is used which was created during database creation.
+
+```
+kubectl create secret generic north-db-credentials --from-literal=postgresPassword='<<password>>' 
+```
+
+- Kill the previous `postgresql-0` pod if it exists (This was part of the earlier postgreq helm install)
+
+```
+kubectl scale statefulset postgresql --replicas=0
+kubectl delete pod postgresql-0
+```
+
+## Update Helm Configuration
+- Update your `myenv.platform.values.yaml` file with the new connections:
+
+```
+postgres:
+  host: &dbHost "northdb.cgythwufggip.us-east-1.rds.amazonaws.com"
+  port: 5432
+  user: &dbUser "postgres"
+  password: &postgresPassword
+    secretKeyRef:
+      name: north-db-credentials
+      key: postgresPassword
+```
+
+- Run the Helm command again after updating the configuration.
+```
+helm upgrade --install north oci://helm.cohere.com/north/stable/cohere-eno --version "<<NORTH VERSION>>" -f platform.values.yaml -f myenv.platform.values.yaml -n cohere --timeout 15m --wait
+```
+
+## Debugging
+- Run a debug pod inside your cluster:
+
+```
+kubectl run --rm -it pg-client-debug --image=alpine -- sh
+```
+
+- Install Postgres client inside the pod:
+
+```
+apk add --no-cache postgresql-client
+```
+
+- Test Postgres connection and list databases and then list users. This is the user list created through the /admin portal
+
+```
+\list
+psql -h <<rds-endpoint-name>> -U postgres -d <<DATABASE_NAME>> (Example: DATABSE_NAME: 'north')
+select * from users;
+```
